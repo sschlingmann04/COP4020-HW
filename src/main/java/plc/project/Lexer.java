@@ -34,6 +34,7 @@ public final class Lexer {
         while (chars.has(0)) {
             if (peek("\\s")) { //check if next char is whitespace
                 chars.advance();  //skip whitespace
+                chars.skip();  // reset length back to 0
             } else {
                 tokens.add(lexToken());  //call lexToken to identify token
             }
@@ -57,14 +58,13 @@ public final class Lexer {
             return lexNumber();
         } else if (peek("[0-9]")) {
             return lexNumber();  // If char is a number, call lexNumber
-        } else if (peek("[+\\-*/=;()<>]") || peek("[!<>]=")) {
-            return lexOperator();  // If char is an operator, call lexOperator
         } else if (peek("\"")) {
             return lexString();  // If char is a double quote, call lexString
         } else if (peek("'")) {
             return lexCharacter();  // If char is a single quote, call lexCharacter
+        } else {
+            return lexOperator();
         }
-        throw new ParseException("Unexpected character", chars.index);  // If no match, throw an exception
     }
 
     public Token lexIdentifier() {
@@ -111,7 +111,7 @@ public final class Lexer {
         }
 
         // Handle the character or escape sequence
-        if (peek("\\")) {
+        if (peek("\\\\")) {
             lexEscape(); // handle escape sequences
         } else if (peek("[^'\n\r]")) {
             chars.advance();
@@ -120,13 +120,13 @@ public final class Lexer {
         }
 
         // Ensure there is only one character
-        if (chars.has(0) && peek("[^'\n\r\\]")) {
+        if (chars.has(0) && peek("[^'\\n\\r\\\\]")) {
             // advance to check if another character is present
             chars.advance();
             if (!peek("'")) {
                 throw new ParseException("Character literal contains more than one character", chars.index);
             }
-        } else if (peek("\\")) {
+        } else if (peek("\\\\")) {
             // if we saw an escape sequence, check if another character is present
             if (!peek("'")) {
                 throw new ParseException("Character literal contains more than one character", chars.index);
@@ -141,11 +141,28 @@ public final class Lexer {
     }
 
     public Token lexString() {
-        throw new UnsupportedOperationException(); //TODO
+        // check for opening double quote
+        if (!match("\"")) {
+            throw new ParseException("Expected opening double quote for string literal", chars.index);
+        }
+
+        // Handle the characters in the string
+        while (peek("[^\"\\n\\r]")) {
+            if (peek("\\\\"))
+                lexEscape();
+            chars.advance();
+        }
+
+        // check for closing double quote
+        if (!match("\"")) {
+            throw new ParseException("Expected closing double quote for string literal", chars.index);
+        }
+
+        return chars.emit(Token.Type.STRING);
     }
 
     public void lexEscape() {
-        if (match("\\")) {
+        if (match("\\\\")) {
             if (!peek("[bnrt'\"\\\\]")) {
                 throw new ParseException("Invalid escape sequence", chars.index);
             }
@@ -156,19 +173,15 @@ public final class Lexer {
     }
 
     public Token lexOperator() {
-        if (peek("<=") || peek(">=") || peek("!=") || peek("==")) {
-            if (match("<=") || match(">=") || match("!=") || match("==")) {
+        if (peek("<", "=") || peek(">", "=") || peek("!", "=") || peek("=", "=")) {
+            if (match("<", "=") || match(">", "=") || match("!", "=") || match("=", "=")) {
                 return chars.emit(Token.Type.OPERATOR);
             }
-        }
-
-        if (peek("[+\\-*/=;()<>!&|^%]")) {
+        } else {
             chars.advance();
-            return chars.emit(Token.Type.OPERATOR);
         }
 
-        // if no operator is matched, throw an exception
-        throw new ParseException("Unexpected character for operator", chars.index);
+        return chars.emit(Token.Type.OPERATOR);
     }
 
     /**
@@ -177,12 +190,12 @@ public final class Lexer {
      * return true if the next characters are {@code 'a', 'b', 'c'}.
      */
     public boolean peek(String... patterns) {
-        for (String pattern : patterns) {
-            if (chars.has(0) && String.valueOf(chars.get(0)).matches(pattern)) {
-                return true;
+        for (int i = 0; i < patterns.length; i++) {
+            if (!chars.has(i) || !String.valueOf(chars.get(i)).matches(patterns[i])) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     /**
@@ -192,7 +205,8 @@ public final class Lexer {
      */
     public boolean match(String... patterns) {
         if (peek(patterns)) {
-            chars.advance();
+            for (String pattern : patterns)
+                chars.advance();
             return true;
         }
         return false;

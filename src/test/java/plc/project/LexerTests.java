@@ -20,10 +20,16 @@ public class LexerTests {
 
     private static Stream<Arguments> testIdentifier() {
         return Stream.of(
+                // INITIAL GIVEN TESTS
                 Arguments.of("Alphabetic", "getName", true),
                 Arguments.of("Alphanumeric", "thelegend27", true),
                 Arguments.of("Leading Hyphen", "-five", false),
-                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false)
+                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false),
+
+                // ADDITIONAL GIVEN TESTS
+                Arguments.of("Single Character", "a", true),
+                Arguments.of("Hyphenated", "a-b-c", true),
+                Arguments.of("Underscores", "___", true)
         );
     }
 
@@ -35,11 +41,16 @@ public class LexerTests {
 
     private static Stream<Arguments> testInteger() {
         return Stream.of(
+                // INITIAL GIVEN TESTS
                 Arguments.of("Single Digit", "1", true),
                 Arguments.of("Decimal", "123.456", false),
                 Arguments.of("Signed Decimal", "-1.0", false),
                 Arguments.of("Trailing Decimal", "1.", false),
-                Arguments.of("Leading Decimal", ".5", false)
+                Arguments.of("Leading Decimal", ".5", false),
+
+                // ADDITIONAL GIVEN TESTS
+                Arguments.of("Signed Integer", "+123", true),
+                Arguments.of("Leading Zeros", "007", true)
         );
     }
 
@@ -51,11 +62,16 @@ public class LexerTests {
 
     private static Stream<Arguments> testDecimal() {
         return Stream.of(
+                // INITIAL GIVEN TESTS
                 Arguments.of("Integer", "1", false),
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
                 Arguments.of("Trailing Decimal", "1.", false),
-                Arguments.of("Leading Decimal", ".5", false)
+                Arguments.of("Leading Decimal", ".5", false),
+
+                // ADDITIONAL GIVEN TESTS
+                Arguments.of("Leading Zeros", "007.0", true),
+                Arguments.of("Double Decimal", "1..0", false)
         );
     }
 
@@ -67,10 +83,15 @@ public class LexerTests {
 
     private static Stream<Arguments> testCharacter() {
         return Stream.of(
+                // INITIAL GIVEN TESTS
                 Arguments.of("Alphabetic", "\'c\'", true),
                 Arguments.of("Newline Escape", "\'\\n\'", true),
                 Arguments.of("Empty", "\'\'", false),
-                Arguments.of("Multiple", "\'abc\'", false)
+                Arguments.of("Multiple", "\'abc\'", false),
+
+                // ADDITIONAL GIVEN TESTS
+                Arguments.of("Unterminated", "\'", false),
+                Arguments.of("Newline", "\'\n\'", false)
         );
     }
 
@@ -82,11 +103,16 @@ public class LexerTests {
 
     private static Stream<Arguments> testString() {
         return Stream.of(
+                // INITIAL GIVEN TESTS
                 Arguments.of("Empty", "\"\"", true),
                 Arguments.of("Alphabetic", "\"abc\"", true),
                 Arguments.of("Newline Escape", "\"Hello,\\nWorld\"", true),
                 Arguments.of("Unterminated", "\"unterminated", false),
-                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false)
+                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false),
+
+                // ADDITIONAL GIVEN TESTS
+                Arguments.of("Symbols", "\"!@#$%^&*()\"", true),
+                Arguments.of("Newline Unterminated", "\"unterminated\n\"", false)
         );
     }
 
@@ -99,10 +125,15 @@ public class LexerTests {
 
     private static Stream<Arguments> testOperator() {
         return Stream.of(
+                // INITIAL GIVEN TESTS
                 Arguments.of("Character", "(", true),
                 Arguments.of("Comparison", "<=", true),
                 Arguments.of("Space", " ", false),
-                Arguments.of("Tab", "\t", false)
+                Arguments.of("Tab", "\t", false),
+
+                // ADDITIONAL GIVEN TESTS
+                Arguments.of("Symbol", "$", true),
+                Arguments.of("Plus Sign", "+", true)
         );
     }
 
@@ -122,6 +153,13 @@ public class LexerTests {
                         new Token(Token.Type.OPERATOR, ";", 9)
                 )),
                 Arguments.of("Example 2", "print(\"Hello, World!\");", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "print", 0),
+                        new Token(Token.Type.OPERATOR, "(", 5),
+                        new Token(Token.Type.STRING, "\"Hello, World!\"", 6),
+                        new Token(Token.Type.OPERATOR, ")", 21),
+                        new Token(Token.Type.OPERATOR, ";", 22)
+                )),
+                Arguments.of("Example 3", "print(\"Hello, World!\");", Arrays.asList(
                         new Token(Token.Type.IDENTIFIER, "print", 0),
                         new Token(Token.Type.OPERATOR, "(", 5),
                         new Token(Token.Type.STRING, "\"Hello, World!\"", 6),

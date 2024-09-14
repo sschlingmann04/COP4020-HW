@@ -32,7 +32,7 @@ public final class Lexer {
     public List<Token> lex() {
         List<Token> tokens = new ArrayList<>();
         while (chars.has(0)) {
-            if (peek("\\s")) { //check if next char is whitespace
+            if (peek("[\\s\u0008]")) { //check if next char is whitespace
                 chars.advance();  //skip whitespace
                 chars.skip();  // reset length back to 0
             } else {

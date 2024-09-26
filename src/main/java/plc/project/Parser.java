@@ -17,7 +17,7 @@ import java.math.BigDecimal;
  * #match(Object...)} are helpers to make the implementation easier.
  *
  * This type of parser is called <em>recursive descent</em>. Each rule in our
- * grammar will have it's own function, and reference to other rules correspond
+ * grammar will have its own function, and reference to other rules correspond
  * to calling that functions.
  */
 public final class Parser {
@@ -110,7 +110,10 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Stmt parseStatement() throws ParseException {
-        return new Ast.Stmt.Expression(parseExpression());  // TODO: everything is just expressions for part a, expand this for part b
+        Ast.Expr expr = parseExpression();
+        if (match("="))
+            return new Ast.Stmt.Assignment(expr, parseExpression());
+        return new Ast.Stmt.Expression(expr);  // TODO: everything is just expressions for part a, expand this for part b
     }
 
     /**
@@ -162,43 +165,66 @@ public final class Parser {
      * Parses the {@code expression} rule.
      */
     public Ast.Expr parseExpression() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
-        return parsePrimaryExpression();
+        return parseLogicalExpression();
     }
 
     /**
      * Parses the {@code logical-expression} rule.
      */
     public Ast.Expr parseLogicalExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expr expr = parseEqualityExpression();
+        while (match("AND") || match("OR")) {
+            String operator = tokens.get(-1).getLiteral();
+            Ast.Expr right = parseEqualityExpression();
+            expr = new Ast.Expr.Binary(operator, expr, right);
+        }
+        return expr;
     }
 
     /**
      * Parses the {@code equality-expression} rule.
      */
     public Ast.Expr parseEqualityExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expr expr = parseAdditiveExpression();
+        while (match("<") || match(">") || match("<=") || match(">=") || match("!=") || match("==")) {
+            String operator = tokens.get(-1).getLiteral();
+            Ast.Expr right = parseAdditiveExpression();
+            expr = new Ast.Expr.Binary(operator, expr, right);
+        }
+        return expr;
     }
 
     /**
      * Parses the {@code additive-expression} rule.
      */
     public Ast.Expr parseAdditiveExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expr expr = parseMultiplicativeExpression();
+        while (match("+") || match("-")) {
+            String operator = tokens.get(-1).getLiteral();
+            Ast.Expr right = parseMultiplicativeExpression();
+            expr = new Ast.Expr.Binary(operator, expr, right);
+        }
+        return expr;
     }
 
     /**
      * Parses the {@code multiplicative-expression} rule.
      */
     public Ast.Expr parseMultiplicativeExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expr expr = parseSecondaryExpression();
+        while (match("*") || match("/")) {
+            String operator = tokens.get(-1).getLiteral();
+            Ast.Expr right = parseSecondaryExpression();
+            expr = new Ast.Expr.Binary(operator, expr, right);
+        }
+        return expr;
     }
 
     /**
      * Parses the {@code secondary-expression} rule.
      */
     public Ast.Expr parseSecondaryExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        return parsePrimaryExpression();  // TODO: finish secondary expression
     }
 
     /**
@@ -220,9 +246,21 @@ public final class Parser {
         } else if (match(Token.Type.DECIMAL)) {
             return new Ast.Expr.Literal(BigDecimal.valueOf(Double.parseDouble(tokens.get(-1).getLiteral())));
         } else if (match(Token.Type.CHARACTER)) {
-            return new Ast.Expr.Literal(tokens.get(-1).getLiteral().charAt(1));
+            String str = tokens.get(-1).getLiteral().substring(1, tokens.get(-1).getLiteral().length() - 1);
+            if (str.charAt(0) == '\\')
+                str = str.replace("\\b", "\b").replace("\\n", "\n")
+                         .replace("\\r", "\r").replace("\\t", "\t")
+                         .replace("\\'", "'").replace("\\\"", "\"")
+                         .replace("\\\\", "\\");
+            char ch = str.charAt(0);
+            return new Ast.Expr.Literal(ch);
         } else if (match(Token.Type.STRING)) {
-            return new Ast.Expr.Literal(tokens.get(-1).getLiteral().substring(1, tokens.get(-1).getLiteral().length() - 1));
+            String str = tokens.get(-1).getLiteral().substring(1, tokens.get(-1).getLiteral().length() - 1);
+            str = str.replace("\\b", "\b").replace("\\n", "\n")
+                     .replace("\\r", "\r").replace("\\t", "\t")
+                     .replace("\\'", "'").replace("\\", "\"")
+                     .replace("\\\\", "\\");
+            return new Ast.Expr.Literal(str);
         } else if (match("(")) {
             Ast.Expr expression = parseExpression(); // Assuming you have a method for parsing expressions
             if (!match(")")) {

@@ -224,7 +224,30 @@ public final class Parser {
      * Parses the {@code secondary-expression} rule.
      */
     public Ast.Expr parseSecondaryExpression() throws ParseException {
-        return parsePrimaryExpression();  // TODO: finish secondary expression
+        Ast.Expr expr = parsePrimaryExpression();
+        String name = tokens.get(-1).getLiteral();
+        while (match(".")) {
+            if (match(Token.Type.IDENTIFIER)) {
+                String method = tokens.get(-1).getLiteral();
+                if (match("(")) {
+                    List<Ast.Expr> arguments = new ArrayList<>();
+                    if (!peek(")")) {
+                        do {
+                            arguments.add(parseExpression());
+                        } while (match(","));
+                    }
+                    if (!match(")")) {
+                        throw new ParseException("Expected closing parenthesis for function call.", tokens.get(-1).getIndex());
+                    }
+                    return new Ast.Expr.Function(Optional.of(new Ast.Expr.Access(Optional.empty(), name)), method, arguments);
+                }
+                return new Ast.Expr.Access(Optional.of(new Ast.Expr.Access(Optional.empty(), name)), method);
+            }
+            else {
+                throw new ParseException("Invalid secondary expression.", tokens.get(-1).getIndex());
+            }
+        }
+        return expr;
     }
 
     /**
@@ -234,7 +257,6 @@ public final class Parser {
      * not strictly necessary.
      */
     public Ast.Expr parsePrimaryExpression() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
         if (match("TRUE")) {
             return new Ast.Expr.Literal(true);
         } else if (match("FALSE")) {

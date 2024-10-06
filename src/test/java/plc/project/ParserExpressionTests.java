@@ -37,6 +37,14 @@ final class ParserExpressionTests {
                                 new Token(Token.Type.OPERATOR, ";", 6)
                         ),
                         new Ast.Stmt.Expression(new Ast.Expr.Function(Optional.empty(), "name", Arrays.asList()))
+                ),
+                Arguments.of("Variable",
+                        Arrays.asList(
+                                //expr;
+                                new Token(Token.Type.IDENTIFIER, "expr", 0),
+                                new Token(Token.Type.OPERATOR, ";", 4)
+                        ),
+                        new Ast.Stmt.Expression(new Ast.Expr.Access(Optional.empty(), "expr"))
                 )
         );
     }
@@ -60,6 +68,21 @@ final class ParserExpressionTests {
                         new Ast.Stmt.Assignment(
                                 new Ast.Expr.Access(Optional.empty(), "name"),
                                 new Ast.Expr.Access(Optional.empty(), "value")
+                        )
+                ),
+                Arguments.of("Field",
+                        Arrays.asList(
+                                //obj.field = expr;
+                                new Token(Token.Type.IDENTIFIER, "obj", 0),
+                                new Token(Token.Type.OPERATOR, ".", 3),
+                                new Token(Token.Type.IDENTIFIER, "field", 4),
+                                new Token(Token.Type.OPERATOR, "=", 10),
+                                new Token(Token.Type.IDENTIFIER, "expr", 12),
+                                new Token(Token.Type.OPERATOR, ";", 16)
+                        ),
+                        new Ast.Stmt.Assignment(
+                                new Ast.Expr.Access(Optional.of(new Ast.Expr.Access(Optional.empty(), "obj")), "field"),
+                                new Ast.Expr.Access(Optional.empty(), "expr")
                         )
                 )
         );
@@ -266,7 +289,36 @@ final class ParserExpressionTests {
         );
     }
 
- 
+    @Test
+    void testException1() {
+        ParseException exception = Assertions.assertThrows(ParseException.class,
+                () -> new Parser(Arrays.asList(
+                        new Token(Token.Type.OPERATOR, "?", 0)
+                )).parseStatement());
+        Assertions.assertEquals(0, exception.getIndex());
+    }
+
+    @Test
+    void testException2() {
+        ParseException exception = Assertions.assertThrows(ParseException.class,
+                () -> new Parser(Arrays.asList(
+                        new Token(Token.Type.OPERATOR, "(", 0),
+                        new Token(Token.Type.IDENTIFIER, "expr", 1)
+                )).parseStatement());
+        Assertions.assertEquals(5, exception.getIndex());
+    }
+
+    @Test
+    void testException3() {
+        ParseException exception = Assertions.assertThrows(ParseException.class,
+                () -> new Parser(Arrays.asList(
+                        new Token(Token.Type.OPERATOR, "(", 0),
+                        new Token(Token.Type.IDENTIFIER, "expr", 1),
+                        new Token(Token.Type.OPERATOR, "]", 5)
+                )).parseStatement());
+        Assertions.assertEquals(5, exception.getIndex());
+    }
+
     /**
      * Standard test function. If expected is null, a ParseException is expected
      * to be thrown (not used in the provided tests).

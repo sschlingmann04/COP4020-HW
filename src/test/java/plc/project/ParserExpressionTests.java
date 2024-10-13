@@ -119,6 +119,22 @@ final class ParserExpressionTests {
                 Arguments.of("Escape Character",
                         Arrays.asList(new Token(Token.Type.STRING, "\"Hello,\\nWorld!\"", 0)),
                         new Ast.Expr.Literal("Hello,\nWorld!")
+                ),
+                Arguments.of("Integer Literal (BigInteger)",
+                        Arrays.asList(new Token(Token.Type.INTEGER, "123456789123456789123456789", 0)),
+                        new Ast.Expr.Literal(new BigInteger("123456789123456789123456789"))
+                ),
+                Arguments.of("Decimal Literal (BigDecimal)",
+                        Arrays.asList(new Token(Token.Type.DECIMAL, "123456789123456789123456789.9999999", 0)),
+                        new Ast.Expr.Literal(new BigDecimal("123456789123456789123456789.9999999"))
+                ),
+                Arguments.of("String Escape \"\\\"\"",
+                        Arrays.asList(new Token(Token.Type.STRING, "\"\\\"\"", 0)),
+                        new Ast.Expr.Literal("\"")
+                ),
+                Arguments.of("String Escape \"\\\\\"",
+                        Arrays.asList(new Token(Token.Type.STRING, "\"\\\\\"", 0)),
+                        new Ast.Expr.Literal("\\")
                 )
         );
     }

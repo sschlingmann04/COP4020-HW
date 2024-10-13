@@ -284,9 +284,9 @@ public final class Parser {
         } else if (match("NIL")) {
             return new Ast.Expr.Literal(null);
         } else if (match(Token.Type.INTEGER)) {
-            return new Ast.Expr.Literal(BigInteger.valueOf(Integer.parseInt(tokens.get(-1).getLiteral())));
+            return new Ast.Expr.Literal(new BigInteger(tokens.get(-1).getLiteral()));
         } else if (match(Token.Type.DECIMAL)) {
-            return new Ast.Expr.Literal(BigDecimal.valueOf(Double.parseDouble(tokens.get(-1).getLiteral())));
+            return new Ast.Expr.Literal(new BigDecimal(tokens.get(-1).getLiteral()));
         } else if (match(Token.Type.CHARACTER)) {
             String str = tokens.get(-1).getLiteral().substring(1, tokens.get(-1).getLiteral().length() - 1);
             if (str.charAt(0) == '\\')
@@ -300,7 +300,7 @@ public final class Parser {
             String str = tokens.get(-1).getLiteral().substring(1, tokens.get(-1).getLiteral().length() - 1);
             str = str.replace("\\b", "\b").replace("\\n", "\n")
                     .replace("\\r", "\r").replace("\\t", "\t")
-                    .replace("\\'", "'").replace("\\", "\"")
+                    .replace("\\'", "'").replace("\\\"", "\"")
                     .replace("\\\\", "\\");
             return new Ast.Expr.Literal(str);
         } else if (match("(")) {

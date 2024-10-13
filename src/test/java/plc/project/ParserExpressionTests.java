@@ -335,6 +335,25 @@ final class ParserExpressionTests {
         Assertions.assertEquals(5, exception.getIndex());
     }
 
+    @ParameterizedTest
+    @MethodSource
+    void testScenarioParseException(String test, List<Token> tokens, ParseException exception) {
+        testParseException(tokens, exception, Parser::parseExpression);
+    }
+    private static Stream<Arguments> testScenarioParseException() {
+        return Stream.of(
+                Arguments.of("Missing Closing Parenthesis",
+                        Arrays.asList(
+                                //012345
+                                //(expr
+                                new Token(Token.Type.OPERATOR, "(", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 1)
+                        ),
+                        new ParseException("Expected closing parenthesis `)`.", 5)
+                )
+        );
+    }
+
     /**
      * Standard test function. If expected is null, a ParseException is expected
      * to be thrown (not used in the provided tests).
@@ -346,6 +365,12 @@ final class ParserExpressionTests {
         } else {
             Assertions.assertThrows(ParseException.class, () -> function.apply(parser));
         }
+    }
+
+    private static <T extends Ast> void testParseException(List<Token> tokens, Exception exception, Function<Parser, T> function) {
+        Parser parser = new Parser(tokens);
+        ParseException pe = Assertions.assertThrows(ParseException.class, () -> function.apply(parser));
+        Assertions.assertEquals(exception, pe);
     }
 
 }

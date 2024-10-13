@@ -13,4 +13,10 @@ public final class ParseException extends RuntimeException {
         return index;
     }
 
+    // Adding an equals method to aid in testing ParseExceptions
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ParseException && index == ((ParseException) obj).index;
+    }
+
 }

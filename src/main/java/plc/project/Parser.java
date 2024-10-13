@@ -110,7 +110,7 @@ public final class Parser {
             throw new ParseException("Expected 'DO' after method signature.", errorIndex);
         }
         List<Ast.Stmt> statements = new ArrayList<>();
-        while (peek("LET") || peek("IF") || peek("FOR") || peek("WHILE") || peek("RETURN") || peek(Token.Type.IDENTIFIER)) {
+        while (peek("LET") || peek("IF") || peek("FOR") || peek("WHILE") || peek("RETURN") || (peek(Token.Type.IDENTIFIER) && !peek("END"))) {
             statements.add(parseStatement());
         }
         if (!match("END")) {
@@ -189,9 +189,11 @@ public final class Parser {
             // Check if the token is 'THEN' instead of 'DO' to match the test case
             String actual = tokens.has(0) ? tokens.get(0).getLiteral() : "EOF";
             if ("THEN".equals(actual)) {
-                throw new ParseException("Expected 'DO', but received 'THEN'.", tokens.get(0).getIndex());
+                int errorIndex = tokens.has(0) ? tokens.get(0).getIndex() : tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length();
+                throw new ParseException("Expected 'DO', but received 'THEN'.", errorIndex);
             } else {
-                throw new ParseException("Expected 'DO' after 'IF' condition.", tokens.get(-1).getIndex());
+                int errorIndex = tokens.has(0) ? tokens.get(0).getIndex() : tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length();
+                throw new ParseException("Expected 'DO' after 'IF' condition.", errorIndex);
             }
         }
         List<Ast.Stmt> thenStatements = new ArrayList<>();
